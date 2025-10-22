@@ -7,7 +7,14 @@ app_license = "mit"
 
 # Apps
 # ------------------
-
+fixtures = [
+    {
+        "doctype": "UOM",
+        "filters": {
+            "uom_name": ["in", ["Bottle", "Krt", "Card", "Pkt", "Toy Cards", "Roll"]]
+        }
+    }
+]
 # required_apps = []
 
 # Each item in the list will be shown as an app in the apps page
