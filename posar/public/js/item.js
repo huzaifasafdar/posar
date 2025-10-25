@@ -7,7 +7,7 @@ frappe.ui.form.on('Item', {
                 args: { text: frm.doc.item_code },
                 callback: function(r) {
                     if (r.message) {
-                        frm.set_value('item_name_ar', r.message);
+                        frm.set_value('custom_item_name_arabic', r.message);
                         frm.set_value('item_name', frm.doc.item_code);
                     }
                 }
