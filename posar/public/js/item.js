@@ -40,5 +40,47 @@ frappe.ui.form.on('Item', {
                 frappe.show_alert({ message: __("Base price calculated: ") + calculated_price, indicator: "green" });
             }
         }
-    }
+    },
+    selling_rate_with_vat(frm) {
+        // Get entered VAT-inclusive value
+        const with_vat = frm.doc.selling_rate_with_vat;
+
+        // Get VAT percentage (you can replace with frm.doc.vat_rate if using that)
+        const vat_percent = frm.doc.discount_percentage || 15;
+
+        if (with_vat && vat_percent) {
+            // Calculate base price (without VAT)
+            const base_price = with_vat / (1 + vat_percent / 100);
+
+            // Update standard_rate field
+            frm.set_value('standard_rate', base_price.toFixed(6));
+
+            // Optional alert for feedback
+            frappe.show_alert({
+                message: __("Calculated Base Price (Excl. VAT): ") + base_price.toFixed(6),
+                indicator: "green"
+            });
+        }
+    }  ,
+    valuation_rate_with_vat(frm) {
+        // Get entered VAT-inclusive value
+        const with_vat = frm.doc.valuation_rate_with_vat;
+
+        // Get VAT percentage (you can replace with frm.doc.vat_rate if using that)
+        const vat_percent = frm.doc.discount_percentage || 15;
+
+        if (with_vat && vat_percent) {
+            // Calculate base price (without VAT)
+            const base_price = with_vat / (1 + vat_percent / 100);
+
+            // Update standard_rate field
+            frm.set_value('valuation_rate', base_price.toFixed(6));
+
+            // Optional alert for feedback
+            frappe.show_alert({
+                message: __("Calculated Base Price (Excl. VAT): ") + base_price.toFixed(6),
+                indicator: "green"
+            });
+        }
+    }      
 });

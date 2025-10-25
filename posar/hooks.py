@@ -13,7 +13,8 @@ fixtures = [
         "filters": {
             "uom_name": ["in", ["Bottle", "Krt", "Card", "Pkt", "Toy Cards", "Roll"]]
         }
-    }
+    },
+    {"doctype": "Custom Field", "filters": {"module": "POS Arabia"}},
 ]
 # required_apps = []
 
