@@ -7,6 +7,13 @@ class ItemCodeFixer(Document):
 
 @frappe.whitelist()
 def run_update(batch_size=500, dry_run=True):
+
+	try:
+		batch_size = int(batch_size)
+	except Exception:
+		batch_size = 500
+
+	dry_run = int(dry_run) if str(dry_run).isdigit() else 1
 	rows = frappe.db.sql("""
 		SELECT ib.parent AS item_name, ib.barcode, ib.idx
 		FROM `tabItem Barcode` ib
