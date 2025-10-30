@@ -1,5 +1,27 @@
 frappe.ui.form.on('Item', {
-    item_code: async function(frm) {
+    before_save: function(frm) {
+        const barcodePattern = /^[0-9]+$/; // Example pattern for barcode
+
+        if (frm.doc.item_code && barcodePattern.test(frm.doc.item_code)) {
+
+            // Check if barcodes field exists and create it if not
+            if (!frm.doc.barcodes) {
+                frm.add_child('barcodes', {
+                    barcode: frm.doc.item_code
+                });
+            } else {
+                // Check if item_code is not already in barcodes
+                let exists = frm.doc.barcodes.some(b => b.barcode === frm.doc.item_code);
+                if (!exists) {
+                    frm.add_child('barcodes', {
+                        barcode: frm.doc.item_code
+                    });
+                }
+            }
+            frm.doc.barcode = frm.doc.item_code;
+        }
+    },
+    item_name: async function(frm) {
         console.log("Item code changed:", frm.doc.item_code);
         if (frm.doc.item_code) {
             frappe.call({
@@ -8,7 +30,6 @@ frappe.ui.form.on('Item', {
                 callback: function(r) {
                     if (r.message) {
                         frm.set_value('custom_item_name_arabic', r.message);
-                        frm.set_value('item_name', frm.doc.item_code);
                     }
                 }
             });
@@ -19,75 +40,15 @@ frappe.ui.form.on('Item', {
     },
     custom_selling_rate_with_vat: async function(frm) {
         await calculate_rate_without_vat(frm, "custom_selling_rate_with_vat", "standard_rate");
+    },
+    item_code: function(frm) {
+        const barcodePattern = /^[0-9]+$/; // Example pattern for barcode
+        if (barcodePattern.test(frm.doc.item_code)) {
+            console.log("Item code is a barcode.");
+        } else {
+            console.log("Item code is a name.");
+        }
     }
-    // // standard_rate: function(frm) {
-    // //     discount_perc = frm.doc.discount_percentage || 15
-    // //     with_vat_price = frm.doc.standard_rate;
-
-    // //     if (with_vat_price && discount_perc) {
-    // //         let discount_factor = with_vat_price * discount_perc / 100;
-    // //         if (discount_factor > 0) {
-    // //             const calculated_price = with_vat_price - discount_factor;
-    // //             frm.set_value('custom_selling_rate_without_vat', calculated_price);
-    // //             frappe.show_alert({ message: __("Base price calculated: ") + calculated_price, indicator: "green" });
-    // //         }
-    // //     }
-    // // },
-    // // valuation_rate: function(frm) {
-    // //     discount_perc = frm.doc.discount_percentage || 15
-    // //     with_vat_price = frm.doc.valuation_rate;
-
-    // //     if (with_vat_price && discount_perc) {
-    // //         let discount_factor = with_vat_price * discount_perc / 100;
-    // //         if (discount_factor > 0) {
-    // //             const calculated_price = with_vat_price - discount_factor;
-    // //             frm.set_value('custom_valuation_rate_without_vat', calculated_price);
-    // //             frappe.show_alert({ message: __("Base price calculated: ") + calculated_price, indicator: "green" });
-    // //         }
-    // //     }
-    // // },
-    // selling_rate_with_vat(frm) {
-    //     // Get entered VAT-inclusive value
-    //     const with_vat = frm.doc.selling_rate_with_vat;
-
-    //     // Get VAT percentage (you can replace with frm.doc.vat_rate if using that)
-    //     const vat_percent = frm.doc.discount_percentage || 15;
-
-    //     if (with_vat && vat_percent) {
-    //         // Calculate base price (without VAT)
-    //         const base_price = with_vat / (1 + vat_percent / 100);
-
-    //         // Update standard_rate field
-    //         frm.set_value('standard_rate', base_price.toFixed(6));
-
-    //         // Optional alert for feedback
-    //         frappe.show_alert({
-    //             message: __("Calculated Base Price (Excl. VAT): ") + base_price.toFixed(6),
-    //             indicator: "green"
-    //         });
-    //     }
-    // }  ,
-    // valuation_rate_with_vat(frm) {
-    //     // Get entered VAT-inclusive value
-    //     const with_vat = frm.doc.valuation_rate_with_vat;
-
-    //     // Get VAT percentage (you can replace with frm.doc.vat_rate if using that)
-    //     const vat_percent = frm.doc.discount_percentage || 15;
-
-    //     if (with_vat && vat_percent) {
-    //         // Calculate base price (without VAT)
-    //         const base_price = with_vat / (1 + vat_percent / 100);
-
-    //         // Update standard_rate field
-    //         frm.set_value('valuation_rate', base_price.toFixed(6));
-
-    //         // Optional alert for feedback
-    //         frappe.show_alert({
-    //             message: __("Calculated Base Price (Excl. VAT): ") + base_price.toFixed(6),
-    //             indicator: "green"
-    //         });
-    //     }
-    // }      
 });
 async function calculate_rate_without_vat(frm, source_field, target_field) {
     let vat_rate = 0;
