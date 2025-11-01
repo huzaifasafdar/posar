@@ -1,0 +1,101 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-10-30 18:38:17.948792",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_vhoi",
+  "scan_barcode",
+  "column_break_cgyc",
+  "item",
+  "column_break_kzoy",
+  "add_item",
+  "section_break_udhv",
+  "detail_table",
+  "section_break_uytv",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_vhoi",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "POS Simple",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "scan_barcode",
+   "fieldtype": "Data",
+   "label": "Scan Barcode"
+  },
+  {
+   "fieldname": "section_break_uytv",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_cgyc",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "item",
+   "fieldtype": "Link",
+   "label": "Item",
+   "options": "Item"
+  },
+  {
+   "fieldname": "section_break_udhv",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "detail_table",
+   "fieldtype": "Table",
+   "options": "POS Simple Items"
+  },
+  {
+   "fieldname": "column_break_kzoy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "add_item",
+   "fieldtype": "Button",
+   "label": "Add Item"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2025-10-30 18:43:37.019280",
+ "modified_by": "Administrator",
+ "module": "POS Arabia",
+ "name": "POS Simple",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

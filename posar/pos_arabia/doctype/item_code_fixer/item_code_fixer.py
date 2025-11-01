@@ -7,14 +7,8 @@ class ItemCodeFixer(Document):
 
 @frappe.whitelist()
 def run_update(batch_size=500, dry_run=True):
-	i_batch_size = 500
+	currentchange = 0
 
-	try:
-		i_batch_size = int(batch_size)
-	except Exception:
-		i_batch_size = 500
-
-	dry_run = int(dry_run) if str(dry_run).isdigit() else 1
 	rows = frappe.db.sql("""
 		SELECT ib.parent AS item_name, ib.barcode, ib.idx
 		FROM `tabItem Barcode` ib
@@ -58,13 +52,12 @@ def run_update(batch_size=500, dry_run=True):
 			except Exception as e:
 				skipped.append((item_name, barcode, f"Error: {e}"))
 		else:
+			currentchange += 1
 			changed.append((item_name, barcode, "Would be updated (Dry Run)"))
 
-		try:
-			if len(changed) % i_batch_size == 0 and not dry_run:
-				frappe.db.commit()
-		except Exception:
-			pass
+		if currentchange % batch_size == 0 and not dry_run:
+			frappe.db.commit()
+
 	if not dry_run:
 		frappe.db.commit()
 
