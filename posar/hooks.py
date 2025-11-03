@@ -152,7 +152,11 @@ doctype_js = {"Item" : "public/js/item.js"}
 # 		"on_trash": "method"
 # 	}
 # }
-
+doc_events = {
+    "Sales Invoice": {
+        "before_save": "posar.pos_arabia.overrides.sales_invoice_events.before_save_sales_invoice"
+    }
+}
 # Scheduled Tasks
 # ---------------
 
