@@ -22,11 +22,11 @@ frappe.ui.form.on('Item', {
         }
     },
     item_name: async function(frm) {
-        console.log("Item code changed:", frm.doc.item_code);
-        if (frm.doc.item_code) {
+        console.log("Item name changed:", frm.doc.item_name);
+        if (frm.doc.item_name) {
             frappe.call({
                 method: 'posar.api.translate.translate_to_arabic',
-                args: { text: frm.doc.item_code },
+                args: { text: frm.doc.item_name },
                 callback: function(r) {
                     if (r.message) {
                         frm.set_value('custom_item_name_arabic', r.message);
@@ -35,12 +35,12 @@ frappe.ui.form.on('Item', {
             });
         }
     },
-    custom_valuation_rate_with_vat: async function(frm) {
-        await calculate_rate_without_vat(frm, "custom_valuation_rate_with_vat", "valuation_rate");
-    },
-    custom_selling_rate_with_vat: async function(frm) {
-        await calculate_rate_without_vat(frm, "custom_selling_rate_with_vat", "standard_rate");
-    },
+    // custom_valuation_rate_with_vat: async function(frm) {
+    //     await calculate_rate_without_vat(frm, "custom_valuation_rate_with_vat", "valuation_rate");
+    // },
+    // custom_selling_rate_with_vat: async function(frm) {
+    //     await calculate_rate_without_vat(frm, "custom_selling_rate_with_vat", "standard_rate");
+    // },
     item_code: function(frm) {
         const barcodePattern = /^[0-9]+$/; // Example pattern for barcode
         if (barcodePattern.test(frm.doc.item_code)) {
