@@ -1,4 +1,27 @@
 frappe.ui.form.on('Item', {
+    refresh(frm) {
+        frm.add_custom_button("Print Barcode", () => {
+            frappe.call({
+                method: "posar.api.barcode.print_item_barcode",
+                args: {
+                    item_code: frm.doc.item_code,
+                    item_name: frm.doc.item_name,
+                    barcode: frm.doc.barcode || frm.doc.barcodes?.[0]?.barcode,
+                    price: frm.doc.standard_rate
+                },
+                callback(r) {
+                    if (r.message) {
+                        // download .zpl file
+                        const blob = new Blob([r.message], { type: "text/plain" });
+                        const link = document.createElement("a");
+                        link.href = URL.createObjectURL(blob);
+                        link.download = `${frm.doc.item_code}.zpl`;
+                        link.click();
+                    }
+                }
+            });
+        });
+    },
     before_save: function(frm) {
         const barcodePattern = /^[0-9]+$/; // Example pattern for barcode
 
