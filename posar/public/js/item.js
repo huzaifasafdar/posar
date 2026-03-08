@@ -117,21 +117,45 @@ async function calculate_rate_without_vat(frm, source_field, target_field) {
 
 function sendZPLToPrinter(zpl) {
 
-    BrowserPrint.getDefaultDevice("printer", function(printer){
+    loadBrowserPrint(function(){
 
-        if(!printer){
-            frappe.msgprint("No Zebra printer detected");
-            return;
-        }
+        BrowserPrint.getDefaultDevice("printer", function(printer){
 
-        printer.send(
-            zpl,
-            function(){ frappe.show_alert("Label printed"); },
-            function(err){ frappe.msgprint(err); }
-        );
+            if(!printer){
+                frappe.msgprint("No Zebra printer detected");
+                return;
+            }
 
-    }, function(error){
-        frappe.msgprint("Printer error: " + error);
+            printer.send(
+                zpl,
+                function(){
+                    frappe.show_alert("Label printed");
+                },
+                function(err){
+                    frappe.msgprint(err);
+                }
+            );
+
+        });
+
     });
 
+}
+function loadBrowserPrint(callback) {
+
+    if (typeof BrowserPrint !== "undefined") {
+        callback();
+        return;
+    }
+
+    let script = document.createElement("script");
+    script.src = "http://localhost:9100/BrowserPrint-3.0.216.min.js";
+
+    script.onload = callback;
+
+    script.onerror = function () {
+        frappe.msgprint("Zebra Browser Print not installed.");
+    };
+
+    document.head.appendChild(script);
 }
