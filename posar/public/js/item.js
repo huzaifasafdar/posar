@@ -134,14 +134,22 @@ function loadBrowserPrint(callback) {
         return;
     }
 
-    let script = document.createElement("script");
-    script.src = "http://localhost:9100/BrowserPrint-3.0.216.min.js";
+    // Discover the actual JS filename served by the local Zebra Browser Print app
+    const base = window.location.protocol === "https:" ? "https://localhost:9101" : "http://localhost:9100";
 
-    script.onload = callback;
-
-    script.onerror = function () {
-        frappe.msgprint("Zebra Browser Print not installed.");
-    };
-
-    document.head.appendChild(script);
+    fetch(base + "/available")
+        .then(r => r.json())
+        .then(data => {
+            const jsFile = data.printer && data.printer.connection ? null : null; // not used, just confirming service is up
+            let script = document.createElement("script");
+            script.src = base + "/BrowserPrint-3.0.216.min.js";
+            script.onload = callback;
+            script.onerror = function () {
+                frappe.msgprint("Zebra Browser Print not installed or version mismatch. Please ensure the Zebra Browser Print app is running.");
+            };
+            document.head.appendChild(script);
+        })
+        .catch(() => {
+            frappe.msgprint("Zebra Browser Print app is not running. Please start it and try again.");
+        });
 }
