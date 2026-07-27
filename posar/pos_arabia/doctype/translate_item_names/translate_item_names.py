@@ -3,7 +3,6 @@
 
 import frappe
 from frappe.model.document import Document
-from googletrans import Translator
 import time
 import re
 
@@ -20,6 +19,11 @@ def translate_all_items():
     )
 
 def _translate_all_items():
+    try:
+        from googletrans import Translator
+    except ImportError:
+        frappe.throw("Please install googletrans before running item translation.")
+
     translator = Translator()
 
     # Fetch only items that have NO Arabic name yet
