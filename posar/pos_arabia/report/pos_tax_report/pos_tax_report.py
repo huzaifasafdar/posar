@@ -28,14 +28,35 @@ def validate_filters(filters):
 def get_data(filters):
 	data = []
 
-	sales_data = get_sales_tax_data(filters)
-	purchase_data = get_purchase_tax_data(filters, is_expense=False)
-	expense_data = get_purchase_tax_data(filters, is_expense=True)
-	summary_data = get_summary_rows(sales_data, purchase_data, expense_data)
+	sales_data = get_sales_vat_data(filters, is_return=False)
+	sales_return_data = get_sales_vat_data(filters, is_return=True)
+	purchase_data = get_purchase_vat_data(filters, is_expense=False, is_return=False)
+	purchase_return_data = get_purchase_vat_data(filters, is_expense=False, is_return=True)
+	expense_data = get_purchase_vat_data(filters, is_expense=True, is_return=False)
+	expense_return_data = get_purchase_vat_data(filters, is_expense=True, is_return=True)
+	summary_data = get_summary_rows(
+		sales_data,
+		sales_return_data,
+		purchase_data,
+		purchase_return_data,
+		expense_data,
+		expense_return_data,
+	)
 
-	data.extend(get_section_rows("SALES", sales_data, get_section_totals(sales_data)))
-	data.extend(get_section_rows("PURCHASES", purchase_data, get_section_totals(purchase_data)))
-	data.extend(get_section_rows("EXPENSES", expense_data, get_section_totals(expense_data)))
+	transaction_type = filters.get("transaction_type") or "All"
+
+	if transaction_type in ("All", "Sales"):
+		data.extend(get_section_rows("SALES", sales_data, get_section_totals(sales_data)))
+		data.extend(get_section_rows("SALES RETURN", sales_return_data, get_section_totals(sales_return_data)))
+
+	if transaction_type in ("All", "Purchase / Expense"):
+		data.extend(get_section_rows("PURCHASES", purchase_data, get_section_totals(purchase_data)))
+		data.extend(
+			get_section_rows("PURCHASE RETURN", purchase_return_data, get_section_totals(purchase_return_data))
+		)
+		data.extend(get_section_rows("EXPENSES", expense_data, get_section_totals(expense_data)))
+		data.extend(get_section_rows("EXPENSE RETURN", expense_return_data, get_section_totals(expense_return_data)))
+
 	data.extend(
 		get_section_rows(
 			"SUMMARY",
@@ -77,7 +98,7 @@ def get_section_totals(rows):
 	}
 
 
-def get_sales_tax_data(filters):
+def get_sales_vat_data(filters, is_return=False):
 	conditions = get_sales_conditions(filters)
 
 	return frappe.db.sql(
@@ -102,6 +123,7 @@ def get_sales_tax_data(filters):
 		WHERE
 			si.docstatus = 1
 			AND si.company = %(company)s
+			AND si.is_return = {1 if is_return else 0}
 			AND si.posting_date BETWEEN %(from_date)s AND %(to_date)s
 			{conditions}
 		ORDER BY
@@ -112,7 +134,7 @@ def get_sales_tax_data(filters):
 	)
 
 
-def get_purchase_tax_data(filters, is_expense=False):
+def get_purchase_vat_data(filters, is_expense=False, is_return=False):
 	conditions = get_purchase_conditions(filters)
 	item_condition = "pii.item_code IS NULL OR pii.item_code = ''" if is_expense else "ifnull(pii.item_code, '') != ''"
 
@@ -143,6 +165,7 @@ def get_purchase_tax_data(filters, is_expense=False):
 		WHERE
 			pi.docstatus = 1
 			AND pi.company = %(company)s
+			AND pi.is_return = {1 if is_return else 0}
 			AND pi.posting_date BETWEEN %(from_date)s AND %(to_date)s
 			AND ({item_condition})
 			{conditions}
@@ -204,17 +227,17 @@ def get_columns():
 		},
 		{"label": _("Customer / Supplier"), "fieldname": "customer_or_supplier", "fieldtype": "Data", "width": 190},
 		{"label": _("Expense Account"), "fieldname": "expense_account", "fieldtype": "Data", "width": 190},
-		{"label": _("Tax Account"), "fieldname": "tax_account", "fieldtype": "Data", "width": 190},
+		{"label": _("VAT Account"), "fieldname": "tax_account", "fieldtype": "Data", "width": 190},
 		{"label": _("Rate"), "fieldname": "tax_rate", "fieldtype": "Percent", "width": 80},
 		{
-			"label": _("Taxable"),
+			"label": _("VATable Amount"),
 			"fieldname": "taxable_amount",
 			"fieldtype": "Currency",
 			"options": "Company:company:default_currency",
 			"width": 120,
 		},
 		{
-			"label": _("Tax"),
+			"label": _("VAT"),
 			"fieldname": "tax_amount",
 			"fieldtype": "Currency",
 			"options": "Company:company:default_currency",
@@ -230,18 +253,38 @@ def get_columns():
 	]
 
 
-def get_summary_rows(sales_data, purchase_data, expense_data):
-	sales_tax = sum(flt(row.tax_amount) for row in sales_data)
-	purchase_tax = sum(flt(row.tax_amount) for row in purchase_data)
-	expense_tax = sum(flt(row.tax_amount) for row in expense_data)
+def get_summary_rows(
+	sales_data,
+	sales_return_data,
+	purchase_data,
+	purchase_return_data,
+	expense_data,
+	expense_return_data,
+):
+	sales_vat = sum(flt(row.tax_amount) for row in sales_data)
+	sales_return_vat = sum(flt(row.tax_amount) for row in sales_return_data)
+	purchase_vat = sum(flt(row.tax_amount) for row in purchase_data)
+	purchase_return_vat = sum(flt(row.tax_amount) for row in purchase_return_data)
+	expense_vat = sum(flt(row.tax_amount) for row in expense_data)
+	expense_return_vat = sum(flt(row.tax_amount) for row in expense_return_data)
 
 	return [
-		{"customer_or_supplier": _("Sales Tax"), "tax_amount": sales_tax, "is_summary": 1},
-		{"customer_or_supplier": _("Purchase Tax"), "tax_amount": purchase_tax, "is_summary": 1},
-		{"customer_or_supplier": _("Expense Tax"), "tax_amount": expense_tax, "is_summary": 1},
+		{"customer_or_supplier": _("Sales VAT"), "tax_amount": sales_vat, "is_summary": 1},
+		{"customer_or_supplier": _("Sales Return VAT"), "tax_amount": sales_return_vat, "is_summary": 1},
+		{"customer_or_supplier": _("Purchase VAT"), "tax_amount": purchase_vat, "is_summary": 1},
+		{"customer_or_supplier": _("Purchase Return VAT"), "tax_amount": purchase_return_vat, "is_summary": 1},
+		{"customer_or_supplier": _("Expense VAT"), "tax_amount": expense_vat, "is_summary": 1},
+		{"customer_or_supplier": _("Expense Return VAT"), "tax_amount": expense_return_vat, "is_summary": 1},
 		{
-			"customer_or_supplier": _("Net Tax"),
-			"tax_amount": sales_tax - purchase_tax - expense_tax,
+			"customer_or_supplier": _("Net VAT"),
+			"tax_amount": (
+				sales_vat
+				+ sales_return_vat
+				- purchase_vat
+				- purchase_return_vat
+				- expense_vat
+				- expense_return_vat
+			),
 			"is_summary": 1,
 		},
 	]

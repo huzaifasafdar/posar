@@ -152,11 +152,14 @@ doctype_js = {"Item" : "public/js/item.js"}
 # 		"on_trash": "method"
 # 	}
 # }
-# doc_events = {
-#     # "Sales Invoice": {
-#     #     "before_save": "posar.pos_arabia.overrides.sales_invoice_events.before_save_sales_invoice"
-#     # }
-# }
+doc_events = {
+    "Sales Invoice": {
+        "before_validate": "posar.accounting.apply_vat_and_return_accounts",
+    },
+    "Purchase Invoice": {
+        "before_validate": "posar.accounting.apply_vat_and_return_accounts",
+    },
+}
 # Scheduled Tasks
 # ---------------
 
@@ -253,4 +256,3 @@ doctype_js = {"Item" : "public/js/item.js"}
 # default_log_clearing_doctypes = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
-

@@ -56,7 +56,7 @@ frappe.query_reports["POS Tax Report"] = {
 		},
 		{
 			fieldname: "tax_account",
-			label: __("Tax Account"),
+			label: __("VAT Account"),
 			fieldtype: "Link",
 			options: "Account",
 			get_query: function () {
