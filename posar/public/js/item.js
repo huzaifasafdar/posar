@@ -2,24 +2,28 @@ frappe.ui.form.on('Item', {
     refresh(frm) {
     frm.add_custom_button("Print Barcode", () => {
 
+        const barcode = frm.doc.barcode || frm.doc.barcodes?.[0]?.barcode || frm.doc.item_code;
+
+        if (!barcode) {
+            frappe.msgprint(__("Please add a barcode before printing."));
+            return;
+        }
+
         frappe.prompt(
             { label: "Number of Copies", fieldname: "copies", fieldtype: "Int", default: 1, reqd: 1 },
             ({ copies }) => {
-                frappe.call({
-                    method: "posar.api.barcode.print_item_barcode",
-                    args: {
-                        item_code: frm.doc.item_code,
-                        item_name: frm.doc.item_name,
-                        barcode: frm.doc.barcode || frm.doc.barcodes?.[0]?.barcode,
-                        price: frm.doc.standard_rate
-                    },
-                    callback(r) {
-                        if (r.message) {
-                            const qty = Math.max(1, parseInt(copies) || 1);
-                            const zpl = r.message.replace(/\^XZ/i, `^PQ${qty}\n^XZ`);
-                            sendZPLToPrinter(zpl);
-                        }
-                    }
+                const qty = parseInt(copies, 10);
+
+                if (!Number.isInteger(qty) || qty < 1 || qty > 500) {
+                    frappe.msgprint(__("Number of copies must be between 1 and 500."));
+                    return;
+                }
+
+                printBarcodeLabels({
+                    itemName: frm.doc.item_name || frm.doc.item_code,
+                    barcode: String(barcode),
+                    price: frm.doc.standard_rate,
+                    copies: qty
                 });
             },
             "Print Barcode",
@@ -101,55 +105,128 @@ async function calculate_rate_without_vat(frm, source_field, target_field) {
     });
 }
 
-function sendZPLToPrinter(zpl) {
+function printBarcodeLabels({ itemName, barcode, price, copies }) {
+    let barcodeSvg;
 
-    loadBrowserPrint(function(){
-
-        BrowserPrint.getDefaultDevice("printer", function(printer){
-
-            if(!printer){
-                frappe.msgprint("No Zebra printer detected");
-                return;
-            }
-
-            printer.send(
-                zpl,
-                function(){
-                    frappe.show_alert("Label printed");
-                },
-                function(err){
-                    frappe.msgprint(err);
-                }
-            );
-
-        });
-
-    });
-
-}
-function loadBrowserPrint(callback) {
-
-    if (typeof BrowserPrint !== "undefined") {
-        callback();
+    try {
+        barcodeSvg = createCode128Svg(barcode);
+    } catch (error) {
+        frappe.msgprint(__(error.message));
         return;
     }
 
-    // Discover the actual JS filename served by the local Zebra Browser Print app
-    const base = window.location.protocol === "https:" ? "https://localhost:9101" : "http://localhost:9100";
+    const printWindow = window.open("", "_blank", "width=600,height=600");
 
-    fetch(base + "/available")
-        .then(r => r.json())
-        .then(data => {
-            const jsFile = data.printer && data.printer.connection ? null : null; // not used, just confirming service is up
-            let script = document.createElement("script");
-            script.src = base + "/BrowserPrint-3.0.216.min.js";
-            script.onload = callback;
-            script.onerror = function () {
-                frappe.msgprint("Zebra Browser Print not installed or version mismatch. Please ensure the Zebra Browser Print app is running.");
-            };
-            document.head.appendChild(script);
-        })
-        .catch(() => {
-            frappe.msgprint("Zebra Browser Print app is not running. Please start it and try again.");
+    if (!printWindow) {
+        frappe.msgprint(__("Please allow pop-ups to print barcode labels."));
+        return;
+    }
+
+    const safeName = escapeHtml(itemName);
+    const safeBarcode = escapeHtml(barcode);
+    const safePrice = escapeHtml(price ?? "");
+    const labels = Array.from({ length: copies }, () => `
+        <section class="label">
+            <div class="item-name">${safeName}</div>
+            ${barcodeSvg}
+            <div class="barcode-value">${safeBarcode}</div>
+            <div class="price">SAR ${safePrice}</div>
+        </section>
+    `).join("");
+
+    printWindow.document.open();
+    printWindow.document.write(`<!doctype html>
+        <html>
+            <head>
+                <meta charset="utf-8">
+                <title>${__("Print Barcode")}</title>
+                <style>
+                    @page { size: 50mm 25mm; margin: 0; }
+                    * { box-sizing: border-box; }
+                    html, body { margin: 0; padding: 0; font-family: "Courier New", monospace; }
+                    .label {
+                        width: 50mm;
+                        height: 25mm;
+                        padding: 1.5mm 2mm;
+                        overflow: hidden;
+                        break-after: page;
+                        page-break-after: always;
+                        text-align: center;
+                    }
+                    .label:last-child { break-after: auto; page-break-after: auto; }
+                    .item-name {
+                        height: 4mm;
+                        overflow: hidden;
+                        font-size: 8pt;
+                        font-weight: 700;
+                        line-height: 4mm;
+                        white-space: nowrap;
+                        text-overflow: ellipsis;
+                    }
+                    .barcode { display: block; width: 46mm; height: 11mm; }
+                    .barcode-value { font-size: 7pt; line-height: 3mm; }
+                    .price { font-size: 8pt; font-weight: 700; line-height: 3mm; }
+                </style>
+            </head>
+            <body>${labels}</body>
+        </html>`);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.addEventListener("afterprint", () => printWindow.close(), { once: true });
+    setTimeout(() => printWindow.print(), 250);
+}
+
+function createCode128Svg(value) {
+    const patterns = [
+        "212222", "222122", "222221", "121223", "121322", "131222", "122213", "122312",
+        "132212", "221213", "221312", "231212", "112232", "122132", "122231", "113222",
+        "123122", "123221", "223211", "221132", "221231", "213212", "223112", "312131",
+        "311222", "321122", "321221", "312212", "322112", "322211", "212123", "212321",
+        "232121", "111323", "131123", "131321", "112313", "132113", "132311", "211313",
+        "231113", "231311", "112133", "112331", "132131", "113123", "113321", "133121",
+        "313121", "211331", "231131", "213113", "213311", "213131", "311123", "311321",
+        "331121", "312113", "312311", "332111", "314111", "221411", "431111", "111224",
+        "111422", "121124", "121421", "141122", "141221", "112214", "112412", "122114",
+        "122411", "142112", "142211", "241211", "221114", "413111", "241112", "134111",
+        "111242", "121142", "121241", "114212", "124112", "124211", "411212", "421112",
+        "421211", "212141", "214121", "412121", "111143", "111341", "131141", "114113",
+        "114311", "411113", "411311", "113141", "114131", "311141", "411131", "211412",
+        "211214", "211232", "2331112"
+    ];
+    const characters = Array.from(value);
+
+    if (!characters.length || characters.some(character => {
+        const code = character.charCodeAt(0);
+        return code < 32 || code > 126;
+    })) {
+        throw new Error("Barcode must contain printable English letters and numbers only.");
+    }
+
+    const codes = characters.map(character => character.charCodeAt(0) - 32);
+    const checksum = (104 + codes.reduce((sum, code, index) => sum + code * (index + 1), 0)) % 103;
+    const encoded = [104, ...codes, checksum, 106];
+    let x = 10;
+    const bars = [];
+
+    encoded.forEach(code => {
+        patterns[code].split("").forEach((width, index) => {
+            const barWidth = Number(width);
+            if (index % 2 === 0) {
+                bars.push(`<rect x="${x}" y="0" width="${barWidth}" height="50"/>`);
+            }
+            x += barWidth;
         });
+    });
+
+    return `<svg class="barcode" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${x + 10} 50" preserveAspectRatio="none" aria-label="${escapeHtml(value)}">${bars.join("")}</svg>`;
+}
+
+function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+    })[character]);
 }

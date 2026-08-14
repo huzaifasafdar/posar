@@ -65,7 +65,7 @@ def get_data(filters):
 				"tax_amount": sum(
 					flt(row.get("tax_amount"))
 					for row in summary_data
-					if row.get("customer_or_supplier") == _("Net Tax")
+					if row.get("customer_or_supplier") == _("Net VAT")
 				)
 			},
 		)
@@ -111,7 +111,7 @@ def get_sales_vat_data(filters, is_return=False):
 			stc.account_head AS tax_account,
 			stc.rate AS tax_rate,
 			si.base_net_total AS taxable_amount,
-			stc.base_tax_amount AS tax_amount,
+			si.base_net_total * stc.rate / 100 AS tax_amount,
 			si.base_grand_total AS total_amount
 		FROM
 			`tabSales Invoice` si
@@ -148,7 +148,7 @@ def get_purchase_vat_data(filters, is_expense=False, is_return=False):
 			ptc.account_head AS tax_account,
 			ptc.rate AS tax_rate,
 			pi.base_net_total AS taxable_amount,
-			ptc.base_tax_amount AS tax_amount,
+			pi.base_net_total * ptc.rate / 100 AS tax_amount,
 			pi.base_grand_total AS total_amount
 		FROM
 			`tabPurchase Invoice` pi
@@ -230,7 +230,7 @@ def get_columns():
 		{"label": _("VAT Account"), "fieldname": "tax_account", "fieldtype": "Data", "width": 190},
 		{"label": _("Rate"), "fieldname": "tax_rate", "fieldtype": "Percent", "width": 80},
 		{
-			"label": _("VATable Amount"),
+			"label": _("Taxable Amount"),
 			"fieldname": "taxable_amount",
 			"fieldtype": "Currency",
 			"options": "Company:company:default_currency",
@@ -241,6 +241,7 @@ def get_columns():
 			"fieldname": "tax_amount",
 			"fieldtype": "Currency",
 			"options": "Company:company:default_currency",
+			"precision": 3,
 			"width": 120,
 		},
 		{
