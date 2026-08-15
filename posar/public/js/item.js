@@ -122,8 +122,7 @@ function printBarcodeLabels({ companyName, itemName, barcode, price, copies }) {
         frappe.msgprint(__("Please allow pop-ups to print barcode labels."));
         return;
     }
-    const safeCompany = escapeHtml(companyName);
-    const safeName = escapeHtml(itemName);
+    const safeCompany = escapeHtml(String(companyName).toUpperCase());    const safeName = escapeHtml(itemName);
     const safeBarcode = escapeHtml(barcode);
     const safePrice = escapeHtml(price ?? "");
     const labels = Array.from({ length: copies }, () => `
@@ -181,51 +180,87 @@ function printBarcodeLabels({ companyName, itemName, barcode, price, copies }) {
         page-break-after: auto;
     }
 
-    /* COMPANY */
+
+    /* =====================================
+       COMPANY NAME
+       ALWAYS SHOW: GSPT Co
+       ONE LINE
+       ===================================== */
+
     .company-name {
         width: 46mm;
-        height: 10mm;
-        margin: 0 auto;
-
-        font-size: 8pt;
-        font-weight: 700;
-        line-height: 3.3mm;
-
-        text-align: center;
-        white-space: normal;
-        overflow: hidden;
-    }
-
-    /* ITEM */
-    .item-name {
-        width: 46mm;
         height: 4mm;
-        margin: 0 auto;
+        margin: 0 auto 1mm;
 
         font-size: 8pt;
         font-weight: 700;
         line-height: 4mm;
 
+        text-align: center;
         white-space: nowrap;
         overflow: hidden;
+
+        /* Hide original company name */
+        font-size: 0;
+    }
+
+    /* Show short company name */
+    .company-name::after {
+        content: "GSPT Co";
+
+        font-family: "Courier New", monospace;
+        font-size: 8pt;
+        font-weight: 700;
+        line-height: 4mm;
+    }
+
+
+    /* =====================================
+       ITEM NAME
+       ===================================== */
+
+    .item-name {
+        width: 46mm;
+        height: 4mm;
+        margin: 0 auto;
+
+        overflow: hidden;
+        white-space: nowrap;
         text-overflow: ellipsis;
+
+        font-size: 8pt;
+        font-weight: 700;
+        line-height: 4mm;
+
         text-align: center;
     }
 
-    /* BARCODE */
+
+    /* =====================================
+       BARCODE
+       ===================================== */
+
     .barcode {
         display: block;
+
         width: 42mm;
-        height: 9mm;
+        height: 10mm;
+
         margin: 0 auto;
     }
 
-    /* BARCODE NUMBER */
+
+    /* =====================================
+       BARCODE NUMBER
+       ===================================== */
+
     .barcode-value {
         width: 46mm;
         height: 3mm;
         margin: 0 auto;
 
+        overflow: hidden;
+
         font-size: 8pt;
         font-weight: 700;
         line-height: 3mm;
@@ -234,19 +269,57 @@ function printBarcodeLabels({ companyName, itemName, barcode, price, copies }) {
         white-space: nowrap;
     }
 
-    /* PRICE */
+
+    /* =====================================
+       PRICE
+       ===================================== */
+
     .price {
         width: 46mm;
-        height: 3mm;
+        height: 4mm;
         margin: 0 auto;
+
+        overflow: hidden;
 
         font-size: 8pt;
         font-weight: 700;
-        line-height: 3mm;
+        line-height: 4mm;
 
         text-align: center;
         white-space: nowrap;
     }
+        
+    /* =====================================
+       HIDE TIME
+       ===================================== */
+
+    .time,
+    .print-time,
+    .date-time,
+    .timestamp,
+    .time-display,
+    .current-time {
+        display: none !important;
+    }
+
+
+    /* =====================================
+       HIDE "PRINT BARCODE"
+       ===================================== */
+
+    .print-barcode,
+    .print-text,
+    .print-label,
+    .print-button,
+    .printBarcode,
+    .print-barcode-text {
+        display: none !important;
+    }
+
+
+    /* =====================================
+       PRINT SETTINGS
+       ===================================== */
 
     @media print {
         html,
@@ -259,7 +332,22 @@ function printBarcodeLabels({ companyName, itemName, barcode, price, copies }) {
         .label {
             width: 50mm;
             height: 30mm;
-            margin: 0;
+        }
+
+        .time,
+        .print-time,
+        .date-time,
+        .timestamp,
+        .time-display,
+        .current-time,
+
+        .print-barcode,
+        .print-text,
+        .print-label,
+        .print-button,
+        .printBarcode,
+        .print-barcode-text {
+            display: none !important;
         }
     }
 </style>
