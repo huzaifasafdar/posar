@@ -1,38 +1,39 @@
 frappe.ui.form.on('Item', {
     refresh(frm) {
-    frm.add_custom_button("Print Barcode", () => {
+        frm.add_custom_button("Print Barcode", () => {
 
-        const barcode = frm.doc.barcode || frm.doc.barcodes?.[0]?.barcode || frm.doc.item_code;
+            const barcode = frm.doc.barcode || frm.doc.barcodes?.[0]?.barcode || frm.doc.item_code;
 
-        if (!barcode) {
-            frappe.msgprint(__("Please add a barcode before printing."));
-            return;
-        }
+            if (!barcode) {
+                frappe.msgprint(__("Please add a barcode before printing."));
+                return;
+            }
 
-        frappe.prompt(
-            { label: "Number of Copies", fieldname: "copies", fieldtype: "Int", default: 1, reqd: 1 },
-            ({ copies }) => {
-                const qty = parseInt(copies, 10);
+            frappe.prompt(
+                { label: "Number of Copies", fieldname: "copies", fieldtype: "Int", default: 1, reqd: 1 },
+                ({ copies }) => {
+                    const qty = parseInt(copies, 10);
 
-                if (!Number.isInteger(qty) || qty < 1 || qty > 500) {
-                    frappe.msgprint(__("Number of copies must be between 1 and 500."));
-                    return;
-                }
+                    if (!Number.isInteger(qty) || qty < 1 || qty > 500) {
+                        frappe.msgprint(__("Number of copies must be between 1 and 500."));
+                        return;
+                    }
 
-                printBarcodeLabels({
-                    itemName: frm.doc.item_name || frm.doc.item_code,
-                    barcode: String(barcode),
-                    price: frm.doc.standard_rate,
-                    copies: qty
-                });
-            },
-            "Print Barcode",
-            "Print"
-        );
+                    printBarcodeLabels({
+                        companyName: frappe.defaults.get_user_default("Company") || frappe.boot?.sysdefaults?.company || "",
+                        itemName: frm.doc.item_name || frm.doc.item_code,
+                        barcode: String(barcode),
+                        price: frm.doc.standard_rate,
+                        copies: qty
+                    });
+                },
+                "Print Barcode",
+                "Print"
+            );
 
-    });
+        });
     },
-    before_save: function(frm) {
+    before_save: function (frm) {
         const barcodePattern = /^[0-9]+$/; // Example pattern for barcode
 
         if (frm.doc.item_code && barcodePattern.test(frm.doc.item_code)) {
@@ -54,13 +55,13 @@ frappe.ui.form.on('Item', {
             frm.doc.barcode = frm.doc.item_code;
         }
     },
-    item_name: async function(frm) {
+    item_name: async function (frm) {
         console.log("Item name changed:", frm.doc.item_name);
         if (frm.doc.item_name) {
             frappe.call({
                 method: 'posar.api.translate.translate_to_arabic',
                 args: { text: frm.doc.item_name },
-                callback: function(r) {
+                callback: function (r) {
                     if (r.message) {
                         frm.set_value('custom_item_name_arabic', r.message);
                     }
@@ -74,7 +75,7 @@ frappe.ui.form.on('Item', {
     // custom_selling_rate_with_vat: async function(frm) {
     //     await calculate_rate_without_vat(frm, "custom_selling_rate_with_vat", "standard_rate");
     // },
-    item_code: function(frm) {
+    item_code: function (frm) {
         const barcodePattern = /^[0-9]+$/; // Example pattern for barcode
         if (barcodePattern.test(frm.doc.item_code)) {
             console.log("Item code is a barcode.");
@@ -105,7 +106,7 @@ async function calculate_rate_without_vat(frm, source_field, target_field) {
     });
 }
 
-function printBarcodeLabels({ itemName, barcode, price, copies }) {
+function printBarcodeLabels({ companyName, itemName, barcode, price, copies }) {
     let barcodeSvg;
 
     try {
@@ -121,15 +122,16 @@ function printBarcodeLabels({ itemName, barcode, price, copies }) {
         frappe.msgprint(__("Please allow pop-ups to print barcode labels."));
         return;
     }
-
+    const safeCompany = escapeHtml(companyName);
     const safeName = escapeHtml(itemName);
     const safeBarcode = escapeHtml(barcode);
     const safePrice = escapeHtml(price ?? "");
     const labels = Array.from({ length: copies }, () => `
         <section class="label">
-            <div class="item-name">${safeName}</div>
+            <div class="company-name">${safeCompany}</div>
             ${barcodeSvg}
             <div class="barcode-value">${safeBarcode}</div>
+            <div class="item-name">${safeName}</div>
             <div class="price">SAR ${safePrice}</div>
         </section>
     `).join("");
@@ -141,32 +143,126 @@ function printBarcodeLabels({ itemName, barcode, price, copies }) {
                 <meta charset="utf-8">
                 <title>${__("Print Barcode")}</title>
                 <style>
-                    @page { size: 50mm 25mm; margin: 0; }
-                    * { box-sizing: border-box; }
-                    html, body { margin: 0; padding: 0; font-family: "Courier New", monospace; }
-                    .label {
-                        width: 50mm;
-                        height: 25mm;
-                        padding: 1.5mm 2mm;
-                        overflow: hidden;
-                        break-after: page;
-                        page-break-after: always;
-                        text-align: center;
-                    }
-                    .label:last-child { break-after: auto; page-break-after: auto; }
-                    .item-name {
-                        height: 4mm;
-                        overflow: hidden;
-                        font-size: 8pt;
-                        font-weight: 700;
-                        line-height: 4mm;
-                        white-space: nowrap;
-                        text-overflow: ellipsis;
-                    }
-                    .barcode { display: block; width: 46mm; height: 11mm; }
-                    .barcode-value { font-size: 7pt; line-height: 3mm; }
-                    .price { font-size: 8pt; font-weight: 700; line-height: 3mm; }
-                </style>
+    @page {
+        size: 50mm 30mm;
+        margin: 0;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    html,
+    body {
+        width: 50mm;
+        margin: 0;
+        padding: 0;
+        font-family: "Courier New", monospace;
+        color: #000;
+        background: #fff;
+    }
+
+    .label {
+        width: 50mm;
+        height: 30mm;
+        margin: 0;
+        padding: 1.5mm 2mm;
+
+        overflow: hidden;
+        text-align: center;
+
+        break-after: page;
+        page-break-after: always;
+        page-break-inside: avoid;
+    }
+
+    .label:last-child {
+        break-after: auto;
+        page-break-after: auto;
+    }
+
+    /* COMPANY */
+    .company-name {
+        width: 46mm;
+        height: 10mm;
+        margin: 0 auto;
+
+        font-size: 8pt;
+        font-weight: 700;
+        line-height: 3.3mm;
+
+        text-align: center;
+        white-space: normal;
+        overflow: hidden;
+    }
+
+    /* ITEM */
+    .item-name {
+        width: 46mm;
+        height: 4mm;
+        margin: 0 auto;
+
+        font-size: 8pt;
+        font-weight: 700;
+        line-height: 4mm;
+
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-align: center;
+    }
+
+    /* BARCODE */
+    .barcode {
+        display: block;
+        width: 42mm;
+        height: 9mm;
+        margin: 0 auto;
+    }
+
+    /* BARCODE NUMBER */
+    .barcode-value {
+        width: 46mm;
+        height: 3mm;
+        margin: 0 auto;
+
+        font-size: 8pt;
+        font-weight: 700;
+        line-height: 3mm;
+
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    /* PRICE */
+    .price {
+        width: 46mm;
+        height: 3mm;
+        margin: 0 auto;
+
+        font-size: 8pt;
+        font-weight: 700;
+        line-height: 3mm;
+
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    @media print {
+        html,
+        body {
+            width: 50mm;
+            margin: 0;
+            padding: 0;
+        }
+
+        .label {
+            width: 50mm;
+            height: 30mm;
+            margin: 0;
+        }
+    }
+</style>
             </head>
             <body>${labels}</body>
         </html>`);
