@@ -142,8 +142,14 @@ function printBarcodeLabels({ companyName, itemName, barcode, price, copies }) {
                 <meta charset="utf-8">
                 <title>${__("Print Barcode")}</title>
                 <style>
+    /* =====================================================
+       BARCODE STICKER
+       SIZE: 3.8cm × 2.6cm
+       = 38mm × 26mm
+       ===================================================== */
+
     @page {
-        size: 50mm 30mm;
+        size: 38mm 26mm;
         margin: 0;
     }
 
@@ -153,21 +159,29 @@ function printBarcodeLabels({ companyName, itemName, barcode, price, copies }) {
 
     html,
     body {
-        width: 50mm;
-        margin: 0;
-        padding: 0;
+        width: 38mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+
         font-family: "Courier New", monospace;
         color: #000;
         background: #fff;
     }
 
-    .label {
-        width: 50mm;
-        height: 30mm;
-        margin: 0;
-        padding: 1.5mm 2mm;
 
-        overflow: hidden;
+    /* =====================================================
+       LABEL
+       ===================================================== */
+
+    .label {
+        width: 38mm !important;
+        height: 26mm !important;
+
+        margin: 0 !important;
+        padding: 1mm 1mm !important;
+
+        overflow: hidden !important;
+
         text-align: center;
 
         break-after: page;
@@ -181,173 +195,145 @@ function printBarcodeLabels({ companyName, itemName, barcode, price, copies }) {
     }
 
 
-    /* =====================================
-       COMPANY NAME
-       ALWAYS SHOW: GSPT Co
+    /* =====================================================
+       COMPANY
+       ALWAYS SHOW GSPT Co
        ONE LINE
-       ===================================== */
+       ===================================================== */
 
     .company-name {
-        width: 46mm;
-        height: 4mm;
-        margin: 0 auto 1mm;
+        width: 36mm;
+        height: 3.5mm;
 
-        font-size: 8pt;
+        margin: 0 auto 0.5mm;
+
+        font-size: 0 !important;
         font-weight: 700;
-        line-height: 4mm;
+
+        line-height: 3.5mm;
 
         text-align: center;
+
         white-space: nowrap;
         overflow: hidden;
-
-        /* Hide original company name */
-        font-size: 0;
     }
 
-    /* Show short company name */
     .company-name::after {
         content: "GSPT Co";
 
         font-family: "Courier New", monospace;
-        font-size: 8pt;
+        font-size: 7pt;
         font-weight: 700;
-        line-height: 4mm;
+        line-height: 3.5mm;
     }
 
 
-    /* =====================================
-       ITEM NAME
-       ===================================== */
-
-    .item-name {
-        width: 46mm;
-        height: 4mm;
-        margin: 0 auto;
-
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-
-        font-size: 8pt;
-        font-weight: 700;
-        line-height: 4mm;
-
-        text-align: center;
-    }
-
-
-    /* =====================================
+    /* =====================================================
        BARCODE
-       ===================================== */
+       ===================================================== */
 
     .barcode {
         display: block;
 
-        width: 42mm;
-        height: 10mm;
+        width: 35mm;
+        height: 8mm;
 
         margin: 0 auto;
     }
 
 
-    /* =====================================
+    /* =====================================================
        BARCODE NUMBER
-       ===================================== */
+       ===================================================== */
 
     .barcode-value {
-        width: 46mm;
+        width: 36mm;
         height: 3mm;
+
         margin: 0 auto;
 
         overflow: hidden;
 
-        font-size: 8pt;
+        font-size: 6.5pt;
         font-weight: 700;
         line-height: 3mm;
 
         text-align: center;
+
         white-space: nowrap;
     }
 
 
-    /* =====================================
-       PRICE
-       ===================================== */
+    /* =====================================================
+       ITEM NAME
+       ===================================================== */
 
-    .price {
-        width: 46mm;
-        height: 4mm;
+    .item-name {
+        width: 36mm;
+        height: 3.5mm;
+
         margin: 0 auto;
 
         overflow: hidden;
 
-        font-size: 8pt;
+        font-size: 6.5pt;
         font-weight: 700;
-        line-height: 4mm;
+        line-height: 3.5mm;
 
         text-align: center;
+
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+
+    /* =====================================================
+       PRICE
+       ===================================================== */
+
+    .price {
+        width: 36mm;
+        height: 3.5mm;
+
+        margin: 0 auto;
+
+        overflow: hidden;
+
+        font-size: 7pt;
+        font-weight: 700;
+        line-height: 3.5mm;
+
+        text-align: center;
+
         white-space: nowrap;
     }
-        
-    /* =====================================
-       HIDE TIME
-       ===================================== */
 
-    .time,
-    .print-time,
-    .date-time,
-    .timestamp,
-    .time-display,
-    .current-time {
-        display: none !important;
-    }
-
-
-    /* =====================================
-       HIDE "PRINT BARCODE"
-       ===================================== */
-
-    .print-barcode,
-    .print-text,
-    .print-label,
-    .print-button,
-    .printBarcode,
-    .print-barcode-text {
-        display: none !important;
-    }
-
-
-    /* =====================================
-       PRINT SETTINGS
-       ===================================== */
+    /* =====================================================
+       PRINT
+       ===================================================== */
 
     @media print {
+
+        @page {
+            size: 38mm 26mm;
+            margin: 0;
+        }
+
         html,
         body {
-            width: 50mm;
-            margin: 0;
-            padding: 0;
+            width: 38mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
         }
 
         .label {
-            width: 50mm;
-            height: 30mm;
-        }
+            width: 38mm !important;
+            height: 26mm !important;
 
-        .time,
-        .print-time,
-        .date-time,
-        .timestamp,
-        .time-display,
-        .current-time,
+            margin: 0 !important;
+            padding: 1mm !important;
 
-        .print-barcode,
-        .print-text,
-        .print-label,
-        .print-button,
-        .printBarcode,
-        .print-barcode-text {
-            display: none !important;
+            overflow: hidden !important;
         }
     }
 </style>
