@@ -110,7 +110,7 @@ function printBarcodeLabels({ companyName, itemName, barcode, price, copies }) {
     let barcodeSvg;
 
     try {
-        barcodeSvg = createCode128Svg(barcode);
+        barcodeSvg = createBarcodeSvg(barcode);
     } catch (error) {
         frappe.msgprint(__(error.message));
         return;
@@ -122,6 +122,7 @@ function printBarcodeLabels({ companyName, itemName, barcode, price, copies }) {
         frappe.msgprint(__("Please allow pop-ups to print barcode labels."));
         return;
     }
+
     const safeName = escapeHtml(itemName);
     const safeBarcode = escapeHtml(barcode);
     const safePrice = price != null && price !== ""
@@ -144,8 +145,6 @@ function printBarcodeLabels({ companyName, itemName, barcode, price, copies }) {
                 <meta charset="utf-8">
                 <title>${__("Print Barcode")}</title>
                 <style>
-    /* BARCODE STICKER: 38mm × 26mm (3.8cm × 2.6cm) */
-
     @page {
         size: 38mm 26mm;
         margin: 0;
@@ -159,10 +158,9 @@ function printBarcodeLabels({ companyName, itemName, barcode, price, copies }) {
 
     html,
     body {
-        width: 38mm !important;
-        height: 26mm !important;
-        margin: 0 !important;
-        padding: 0 !important;
+        width: 38mm;
+        margin: 0;
+        padding: 0;
         font-family: "Courier New", monospace;
         color: #000;
         background: #fff;
@@ -171,70 +169,82 @@ function printBarcodeLabels({ companyName, itemName, barcode, price, copies }) {
     }
 
     .label {
-        width: 38mm !important;
-        height: 26mm !important;
-        padding: 0.5mm 1mm !important;
-        overflow: hidden !important;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-        text-align: center;
-        break-after: page;
+        position: relative;
+        width: 38mm;
+        height: 26mm;
+        overflow: hidden;
         page-break-after: always;
-        page-break-inside: avoid;
+        break-after: page;
     }
 
     .label:last-child {
-        break-after: auto;
         page-break-after: auto;
+        break-after: auto;
     }
 
     .company-name {
-        flex: 0 0 2.5mm;
-        width: 36mm;
+        position: absolute;
+        top: 0.8mm;
+        left: 1mm;
+        right: 1mm;
+        height: 2.8mm;
         font-size: 6pt;
         font-weight: 700;
-        line-height: 2.5mm;
+        line-height: 2.8mm;
+        text-align: center;
         white-space: nowrap;
         overflow: hidden;
     }
 
     .barcode {
-        flex: 0 0 6.5mm;
+        position: absolute;
+        top: 3.8mm;
+        left: 50%;
+        transform: translateX(-50%);
         display: block;
-        width: 34mm;
-        height: 6.5mm;
-        margin: 0;
+        width: 32mm;
+        height: 8mm;
     }
 
     .barcode-value {
-        flex: 0 0 2.5mm;
-        width: 36mm;
+        position: absolute;
+        top: 12.2mm;
+        left: 1mm;
+        right: 1mm;
+        height: 2.8mm;
         font-size: 5.5pt;
         font-weight: 700;
-        line-height: 2.5mm;
+        line-height: 2.8mm;
+        text-align: center;
         white-space: nowrap;
         overflow: hidden;
     }
 
     .item-name {
-        flex: 0 0 3mm;
-        width: 36mm;
+        position: absolute;
+        top: 15.2mm;
+        left: 1mm;
+        right: 1mm;
+        height: 3.2mm;
         font-size: 5.5pt;
         font-weight: 700;
-        line-height: 3mm;
+        line-height: 3.2mm;
+        text-align: center;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
     .price {
-        flex: 0 0 3mm;
-        width: 36mm;
+        position: absolute;
+        top: 18.6mm;
+        left: 1mm;
+        right: 1mm;
+        height: 3.2mm;
         font-size: 6pt;
         font-weight: 700;
-        line-height: 3mm;
+        line-height: 3.2mm;
+        text-align: center;
         white-space: nowrap;
         overflow: hidden;
     }
@@ -247,17 +257,14 @@ function printBarcodeLabels({ companyName, itemName, barcode, price, copies }) {
 
         html,
         body {
-            width: 38mm !important;
-            height: auto !important;
-            margin: 0 !important;
-            padding: 0 !important;
+            width: 38mm;
+            margin: 0;
+            padding: 0;
         }
 
         .label {
-            width: 38mm !important;
-            height: 26mm !important;
-            padding: 0.5mm 1mm !important;
-            overflow: hidden !important;
+            width: 38mm;
+            height: 26mm;
         }
     }
 </style>
@@ -270,7 +277,99 @@ function printBarcodeLabels({ companyName, itemName, barcode, price, copies }) {
     setTimeout(() => printWindow.print(), 250);
 }
 
-function createCode128Svg(value) {
+function createBarcodeSvg(value) {
+    const normalized = String(value || "").trim();
+    if (!normalized) {
+        throw new Error("Barcode value is required.");
+    }
+
+    if (/^\d{12,13}$/.test(normalized)) {
+        return buildLinearBarcodeSvg(encodeEan13(normalized));
+    }
+
+    return buildLinearBarcodeSvg(encodeCode128(normalized));
+}
+
+function buildLinearBarcodeSvg(modules, { moduleWidth = 2, barHeight = 50, quietZone = 11 } = {}) {
+    const totalWidth = (quietZone * 2 + modules.length) * moduleWidth;
+    let x = quietZone * moduleWidth;
+    const rects = [];
+
+    modules.forEach(isBar => {
+        if (isBar) {
+            rects.push(
+                `<rect x="${x}" y="0" width="${moduleWidth}" height="${barHeight}" shape-rendering="crispEdges"/>`
+            );
+        }
+        x += moduleWidth;
+    });
+
+    return `<svg class="barcode" xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="${barHeight}" viewBox="0 0 ${totalWidth} ${barHeight}" preserveAspectRatio="xMidYMid meet" aria-label="barcode">${rects.join("")}</svg>`;
+}
+
+function encodeEan13(value) {
+    const digitsOnly = String(value).replace(/\D/g, "");
+    let digits;
+
+    if (digitsOnly.length === 12) {
+        digits = digitsOnly + ean13CheckDigit(digitsOnly);
+    } else if (digitsOnly.length === 13) {
+        digits = digitsOnly;
+    } else {
+        throw new Error("EAN-13 barcode must contain 12 or 13 digits.");
+    }
+
+    const EAN13_L = [
+        "0001101", "0011001", "0010011", "0111101", "0100011",
+        "0110001", "0101111", "0111011", "0110111", "0001011"
+    ];
+    const EAN13_G = [
+        "0100111", "0110011", "0011011", "0100001", "0011101",
+        "0111001", "0000101", "0010001", "0001001", "0010111"
+    ];
+    const EAN13_R = [
+        "1110010", "1100110", "1101100", "1000010", "1011100",
+        "1001110", "1010000", "1000100", "1001000", "1110100"
+    ];
+    const EAN13_PARITY = [
+        "LLLLLL", "LLGLGG", "LLGGLG", "LLGGGL", "LGLLGG",
+        "LGGLLG", "LGGGLL", "LGLGLG", "LGLGGL", "LGGLGL"
+    ];
+
+    const modules = [];
+    const appendPattern = pattern => {
+        pattern.split("").forEach(bit => modules.push(bit === "1"));
+    };
+
+    appendPattern("101");
+
+    const parity = EAN13_PARITY[Number(digits[0])];
+    for (let index = 0; index < 6; index += 1) {
+        const digit = Number(digits[index + 1]);
+        appendPattern(parity[index] === "L" ? EAN13_L[digit] : EAN13_G[digit]);
+    }
+
+    appendPattern("01010");
+
+    for (let index = 0; index < 6; index += 1) {
+        appendPattern(EAN13_R[Number(digits[index + 7])]);
+    }
+
+    appendPattern("101");
+    return modules;
+}
+
+function ean13CheckDigit(firstTwelveDigits) {
+    let sum = 0;
+
+    for (let index = 0; index < 12; index += 1) {
+        sum += Number(firstTwelveDigits[index]) * (index % 2 === 0 ? 1 : 3);
+    }
+
+    return String((10 - (sum % 10)) % 10);
+}
+
+function encodeCode128(value) {
     const patterns = [
         "212222", "222122", "222221", "121223", "121322", "131222", "122213", "122312",
         "132212", "221213", "221312", "231212", "112232", "122132", "122231", "113222",
@@ -299,20 +398,20 @@ function createCode128Svg(value) {
     const codes = characters.map(character => character.charCodeAt(0) - 32);
     const checksum = (104 + codes.reduce((sum, code, index) => sum + code * (index + 1), 0)) % 103;
     const encoded = [104, ...codes, checksum, 106];
-    let x = 10;
-    const bars = [];
+    const modules = [];
 
     encoded.forEach(code => {
         patterns[code].split("").forEach((width, index) => {
             const barWidth = Number(width);
-            if (index % 2 === 0) {
-                bars.push(`<rect x="${x}" y="0" width="${barWidth}" height="50"/>`);
+            const isBar = index % 2 === 0;
+
+            for (let moduleIndex = 0; moduleIndex < barWidth; moduleIndex += 1) {
+                modules.push(isBar);
             }
-            x += barWidth;
         });
     });
 
-    return `<svg class="barcode" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${x + 10} 50" preserveAspectRatio="none" aria-label="${escapeHtml(value)}">${bars.join("")}</svg>`;
+    return modules;
 }
 
 function escapeHtml(value) {
