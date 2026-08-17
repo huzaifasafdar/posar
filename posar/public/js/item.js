@@ -228,7 +228,7 @@ function printBarcodeLabels({ companyName, itemName, barcode, price, copies }) {
         top: 4mm;
         left: 50%;
 
-        width: 32mm;
+        width: 95%;
         height: 7mm;
 
         margin: 0;
@@ -251,7 +251,7 @@ function printBarcodeLabels({ companyName, itemName, barcode, price, copies }) {
         transform: translateX(-50%);
 
         font-size: 7pt;
-        font-weight: 800;
+        font-weight: 900;
         line-height: 2.5mm;
         text-align: center;
 
@@ -290,7 +290,7 @@ function printBarcodeLabels({ companyName, itemName, barcode, price, copies }) {
         height: 2.8mm;
 
         font-size: 7pt;
-        font-weight: 800;
+        font-weight: 900;
         line-height: 2.8mm;
         text-align: center;
 
