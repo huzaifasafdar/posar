@@ -130,11 +130,13 @@ function printBarcodeLabels({ companyName, itemName, barcode, price, copies }) {
         : "";
     const labels = Array.from({ length: copies }, () => `
         <section class="label">
-            <div class="company-name">GSPT Co</div>
-            ${barcodeSvg}
-            <div class="barcode-value">${safeBarcode}</div>
-            <div class="item-name">${safeName}</div>
-            <div class="price">${safePrice ? `SAR ${safePrice}` : ""}</div>
+            <div class="label-body">
+                <div class="company-name">GSPT Co</div>
+                ${barcodeSvg}
+                <div class="barcode-value">${safeBarcode}</div>
+                <div class="item-name">${safeName}</div>
+                <div class="price">${safePrice ? `SAR ${safePrice}` : ""}</div>
+            </div>
         </section>
     `).join("");
 
@@ -158,21 +160,31 @@ function printBarcodeLabels({ companyName, itemName, barcode, price, copies }) {
 
     html,
     body {
-        width: 38mm;
+        width: 100%;
+        min-height: 100%;
         margin: 0;
         padding: 0;
+
         font-family: "Courier New", monospace;
         color: #000;
         background: #fff;
+
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
 
+    /* CENTER THE ENTIRE STICKER */
     .label {
         position: relative;
+
         width: 38mm;
         height: 26mm;
+
+        margin-left: auto;
+        margin-right: auto;
+
         overflow: hidden;
+
         page-break-after: always;
         break-after: page;
     }
@@ -182,69 +194,106 @@ function printBarcodeLabels({ companyName, itemName, barcode, price, copies }) {
         break-after: auto;
     }
 
+    .label-body {
+        position: absolute;
+        top: 0;
+        left: 0;
+
+        width: 38mm;
+        height: 26mm;
+    }
+
+    /* COMPANY */
     .company-name {
         position: absolute;
-        top: 0.8mm;
-        left: 1mm;
-        right: 1mm;
-        height: 2.8mm;
-        font-size: 6pt;
+        top: 1.2mm;
+        left: 1.5mm;
+        right: 1.5mm;
+
+        height: 2.5mm;
+
+        font-size: 5.5pt;
         font-weight: 700;
-        line-height: 2.8mm;
+        line-height: 2.5mm;
         text-align: center;
+
         white-space: nowrap;
         overflow: hidden;
     }
 
+    /* BARCODE - CENTER */
     .barcode {
         position: absolute;
-        top: 3.8mm;
+
+        top: 4mm;
         left: 50%;
+
+        width: 28mm;
+        height: 7mm;
+
+        margin: 0;
         transform: translateX(-50%);
+
         display: block;
-        width: 32mm;
-        height: 8mm;
     }
 
+    /* BARCODE NUMBER - CENTER */
     .barcode-value {
         position: absolute;
-        top: 12.2mm;
-        left: 1mm;
-        right: 1mm;
-        height: 2.8mm;
-        font-size: 5.5pt;
+
+        top: 11.5mm;
+        left: 50%;
+
+        width: 35mm;
+        height: 2.5mm;
+
+        margin: 0;
+        transform: translateX(-50%);
+
+        font-size: 5pt;
         font-weight: 700;
-        line-height: 2.8mm;
+        line-height: 2.5mm;
         text-align: center;
+
         white-space: nowrap;
         overflow: hidden;
     }
 
+    /* ITEM */
     .item-name {
         position: absolute;
-        top: 15.2mm;
-        left: 1mm;
-        right: 1mm;
-        height: 3.2mm;
-        font-size: 5.5pt;
+
+        top: 14.2mm;
+        left: 1.5mm;
+        right: 1.5mm;
+
+        height: 3mm;
+
+        font-size: 5pt;
         font-weight: 700;
-        line-height: 3.2mm;
+        line-height: 3mm;
         text-align: center;
+
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
+    /* PRICE */
     .price {
         position: absolute;
-        top: 18.6mm;
-        left: 1mm;
-        right: 1mm;
-        height: 3.2mm;
-        font-size: 6pt;
+
+        top: 17.4mm;
+        left: 1.5mm;
+        right: 1.5mm;
+
+        height: 2.8mm;
+
+        font-size: 5.5pt;
         font-weight: 700;
-        line-height: 3.2mm;
+        line-height: 2.8mm;
         text-align: center;
+
         white-space: nowrap;
         overflow: hidden;
     }
@@ -257,7 +306,7 @@ function printBarcodeLabels({ companyName, itemName, barcode, price, copies }) {
 
         html,
         body {
-            width: 38mm;
+            width: 100%;
             margin: 0;
             padding: 0;
         }
@@ -265,6 +314,9 @@ function printBarcodeLabels({ companyName, itemName, barcode, price, copies }) {
         .label {
             width: 38mm;
             height: 26mm;
+
+            margin-left: auto;
+            margin-right: auto;
         }
     }
 </style>
@@ -290,7 +342,7 @@ function createBarcodeSvg(value) {
     return buildLinearBarcodeSvg(encodeCode128(normalized));
 }
 
-function buildLinearBarcodeSvg(modules, { moduleWidth = 2, barHeight = 50, quietZone = 11 } = {}) {
+function buildLinearBarcodeSvg(modules, { moduleWidth = 3, barHeight = 50, quietZone = 13 } = {}) {
     const totalWidth = (quietZone * 2 + modules.length) * moduleWidth;
     let x = quietZone * moduleWidth;
     const rects = [];
