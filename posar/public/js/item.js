@@ -34,17 +34,14 @@ frappe.ui.form.on('Item', {
         });
     },
     before_save: function (frm) {
-        const barcodePattern = /^[0-9]+$/; // Example pattern for barcode
+        const barcodePattern = /^[0-9]+$/;
 
         if (frm.doc.item_code && barcodePattern.test(frm.doc.item_code)) {
-
-            // Check if barcodes field exists and create it if not
             if (!frm.doc.barcodes) {
                 frm.add_child('barcodes', {
                     barcode: frm.doc.item_code
                 });
             } else {
-                // Check if item_code is not already in barcodes
                 let exists = frm.doc.barcodes.some(b => b.barcode === frm.doc.item_code);
                 if (!exists) {
                     frm.add_child('barcodes', {
@@ -148,7 +145,7 @@ function printBarcodeLabels({ companyName, itemName, barcode, price, copies }) {
                 <title>${__("Print Barcode")}</title>
                 <style>
     @page {
-        size: 38mm 26mm;
+        size: 36mm 26mm;
         margin: 0;
     }
 
@@ -228,7 +225,7 @@ function printBarcodeLabels({ companyName, itemName, barcode, price, copies }) {
         top: 4mm;
         left: 50%;
 
-        width: 44mm;
+        width: 38mm;
         height: 9mm;
 
         margin: 0;
@@ -335,8 +332,8 @@ function createBarcodeSvg(value) {
         throw new Error("Barcode value is required.");
     }
 
-    if (/^\d{12,13}$/.test(normalized)) {
-        return buildLinearBarcodeSvg(encodeEan13(normalized));
+    if (/^\d+$/.test(normalized)) {
+        return buildLinearBarcodeSvg(encodeCode128(normalized));
     }
 
     return buildLinearBarcodeSvg(encodeCode128(normalized));

@@ -13,9 +13,9 @@ frappe.ui.form.on("POS Simple", {
         const barcode = frm.doc.scan_barcode;
         if (!barcode) return;
 
-        // 🔹 Call custom backend method to resolve barcode → item_code
+        // Resolve barcode to item_code via the backend API
         frappe.call({
-            method: "posar.api.pos_simle_api.get_item_by_barcode", // you'll create this in Python
+            method: "posar.api.pos_simple_api.get_item_by_barcode",
             args: { barcode: barcode },
             callback: function (r) {
                 if (!r.message) {
