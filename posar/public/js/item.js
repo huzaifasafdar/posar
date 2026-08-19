@@ -39,7 +39,7 @@ frappe.ui.form.on('Item', {
 
                         itemName:
                             frm.doc.item_name ||
-                            frm.doc.item_code,
+                            "",
 
                         // Use the ACTUAL barcode.
                         // Do NOT use item_code as fallback.
@@ -303,12 +303,11 @@ function printBarcodeLabels({
                         top: 3.8mm;
                         left: 50%;
 
-                        transform:
-                            translateX(-50%);
+                        transform: translateX(-50%);
 
                         display: block;
 
-                        width: 36mm;
+                        width: 37mm;
                         height: 9mm;
                     }
 
@@ -425,10 +424,7 @@ function printBarcodeLabels({
  *
  * IMPORTANT:
  *
- * 12 digits:
- *     Add EAN-13 check digit.
- *
- * 13 digits:
+ * Numeric and text values:
  *     Keep EXACTLY as provided.
  *
  * Other values:
@@ -444,26 +440,6 @@ function normalizeBarcodeValue(value) {
         );
     }
 
-    const digitsOnly =
-        normalized.replace(/\D/g, "");
-
-    // 12 digit number:
-    // Generate the 13th check digit.
-    if (digitsOnly.length === 12) {
-        return (
-            digitsOnly +
-            ean13CheckDigit(digitsOnly)
-        );
-    }
-
-    // 13 digit barcode:
-    // DO NOT CHANGE IT.
-    if (digitsOnly.length === 13) {
-        return digitsOnly;
-    }
-
-    // Everything else:
-    // Keep the original value.
     return normalized;
 }
 
@@ -534,9 +510,7 @@ function buildLinearBarcodeSvg(
         +(totalModules * moduleWidthMm)
             .toFixed(2);
 
-    const heightMm =
-        +(barUnits * moduleWidthMm)
-            .toFixed(2);
+    const heightMm = 9;
 
     const parts = [
         `<rect width="${totalModules}" ` +
@@ -585,7 +559,7 @@ function buildLinearBarcodeSvg(
             width="${widthMm}mm"
             height="${heightMm}mm"
             viewBox="0 0 ${totalModules} ${barUnits}"
-            preserveAspectRatio="xMidYMid meet"
+            preserveAspectRatio="none"
             shape-rendering="crispEdges"
         >
             ${parts.join("")}
@@ -898,16 +872,39 @@ function encodeCode128(value) {
         );
     }
 
-    // Code 128-B
-    const codes =
-        characters.map(character =>
-            character.charCodeAt(0) - 32
-        );
+    let codes;
+
+    if (/^\d+$/.test(value) && value.length >= 2) {
+        codes = [105];
+
+        let index = 0;
+
+        while (index + 1 < value.length) {
+            codes.push(
+                Number(value.slice(index, index + 2))
+            );
+            index += 2;
+        }
+
+        if (index < value.length) {
+            codes.push(
+                100,
+                value.charCodeAt(index) - 32
+            );
+        }
+    } else {
+        // Code 128-B
+        codes =
+            characters.map(character =>
+                character.charCodeAt(0) - 32
+            );
+        codes.unshift(104);
+    }
 
     const checksum =
         (
-            104 +
-            codes.reduce(
+            codes[0] +
+            codes.slice(1).reduce(
                 (
                     sum,
                     code,
@@ -920,7 +917,6 @@ function encodeCode128(value) {
         ) % 103;
 
     const encoded = [
-        104,
         ...codes,
         checksum,
         106
