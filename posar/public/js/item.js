@@ -308,7 +308,7 @@ function printBarcodeLabels({
 
                         display: block;
 
-                        width: 40mm;
+                        width: 36mm;
                         height: 9mm;
                     }
 
@@ -475,7 +475,10 @@ function createBarcodeSvg(value) {
     const normalized =
         normalizeBarcodeValue(value);
 
-    if (/^\d{13}$/.test(normalized)) {
+    if (
+        /^\d{13}$/.test(normalized) &&
+        isValidEan13(normalized)
+    ) {
         return buildLinearBarcodeSvg(
             encodeEan13(normalized),
             {
@@ -493,6 +496,21 @@ function createBarcodeSvg(value) {
             barUnits: 25,
             moduleWidthMm: 0.28
         }
+    );
+}
+
+
+/**
+ * Check whether a 13-digit value is a valid EAN-13.
+ */
+function isValidEan13(value) {
+    const digitsOnly =
+        String(value).replace(/\D/g, "");
+
+    return (
+        /^\d{13}$/.test(digitsOnly) &&
+        Number(digitsOnly[12]) ===
+            Number(ean13CheckDigit(digitsOnly.slice(0, 12)))
     );
 }
 
