@@ -1,12 +1,18 @@
 frappe.ui.form.on('Item', {
     refresh(frm) {
-        frm.add_custom_button("Print Barcode", () => {
+        frm.add_custom_button("Print Barcode", async () => {
 
-            // IMPORTANT:
-            // Item Code and Barcode are different things.
-            // First try the Barcode child table, then the main barcode field.
+            if (frm.is_new()) {
+                frappe.msgprint(__("Please save the item before printing."));
+                return;
+            }
+
+            await frm.reload_doc();
+
+            // Read the saved Barcode child table after reloading the document.
+            // New Items commonly use Item Code as their barcode value.
             const barcodeRow = frm.doc.barcodes?.find(row => row.barcode);
-            const barcode = barcodeRow?.barcode || frm.doc.barcode;
+            const barcode = barcodeRow?.barcode || frm.doc.item_code;
 
             if (!barcode) {
                 frappe.msgprint(__("Please add a barcode before printing."));
@@ -41,8 +47,7 @@ frappe.ui.form.on('Item', {
                             frm.doc.item_name ||
                             "",
 
-                        // Use the ACTUAL barcode.
-                        // Do NOT use item_code as fallback.
+                        // Use the child-table barcode, or Item Code fallback.
                         barcode: String(barcode),
 
                         price: frm.doc.standard_rate,
