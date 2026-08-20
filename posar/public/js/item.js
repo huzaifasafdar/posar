@@ -245,9 +245,7 @@ function printBarcodeLabels({
                         margin: 0;
                         padding: 0;
 
-                        font-family:
-                            "Courier New",
-                            monospace;
+                        font-family: Arial, Helvetica, sans-serif;
 
                         color: #000;
                         background: #fff;
@@ -291,7 +289,7 @@ function printBarcodeLabels({
 
                         height: 2.5mm;
 
-                        font-size: 7pt;
+                        font-size: 8pt;
                         font-weight: 700;
 
                         line-height: 2.5mm;
@@ -319,16 +317,16 @@ function printBarcodeLabels({
                     .barcode-value {
                         position: absolute;
 
-                        top: 13.2mm;
+                        top: 13.1mm;
                         left: 1.5mm;
                         right: 1.5mm;
 
-                        height: 2.5mm;
+                        height: 3mm;
 
                         font-size: 9pt;
-                        font-weight: bold;
+                        font-weight: 800;
 
-                        line-height: 2.5mm;
+                        line-height: 3mm;
 
                         text-align: center;
 
@@ -339,16 +337,16 @@ function printBarcodeLabels({
                     .item-name {
                         position: absolute;
 
-                        top: 15.5mm;
+                        top: 16.8mm;
                         left: 1.5mm;
                         right: 1.5mm;
 
-                        height: 3mm;
+                        height: 2.5mm;
 
-                        font-size: 5pt;
-                        font-weight: 700;
+                        font-size: 8pt;
+                        font-weight: 800;
 
-                        line-height: 3mm;
+                        line-height: 2.5mm;
 
                         text-align: center;
 
@@ -358,24 +356,28 @@ function printBarcodeLabels({
                         text-overflow: ellipsis;
                     }
 
-                    .price {
+                   .price {
                         position: absolute;
 
-                        top: 18.5mm;
+                        top: 20mm;
                         left: 1.5mm;
                         right: 1.5mm;
 
                         height: 2.8mm;
 
                         font-size: 9pt;
-                        font-weight: bold;
+                        font-weight: 900;
 
                         line-height: 2.8mm;
-
                         text-align: center;
 
                         white-space: nowrap;
                         overflow: hidden;
+
+                        text-shadow:
+                            0.15px 0 #000,
+                            -0.15px 0 #000,
+                            0 0.1px #000;
                     }
 
                     @media print {
