@@ -27,7 +27,7 @@ frappe.ui.form.on('Item', {
                     default: 1,
                     reqd: 1
                 },
-                ({ copies }) => {
+                async ({ copies }) => {
                     const qty = parseInt(copies, 10);
 
                     if (!Number.isInteger(qty) || qty < 1 || qty > 500) {
@@ -37,6 +37,16 @@ frappe.ui.form.on('Item', {
                         return;
                     }
 
+                    const response = await frappe.call({
+                        method: "posar.api.barcode.get_item_barcode_print_data",
+                        args: {
+                            item_code: frm.doc.name,
+                            barcode: String(barcode),
+                            uom: barcodeRow?.posa_uom || barcodeRow?.uom || frm.doc.stock_uom
+                        }
+                    });
+                    const labelData = response.message || {};
+
                     printBarcodeLabels({
                         companyName:
                             frappe.defaults.get_user_default("Company") ||
@@ -44,13 +54,14 @@ frappe.ui.form.on('Item', {
                             "",
 
                         itemName:
+                            labelData.item_name ||
                             frm.doc.item_name ||
                             "",
 
                         // Use the child-table barcode, or Item Code fallback.
-                        barcode: String(barcode),
+                        barcode: String(labelData.barcode || barcode),
 
-                        price: frm.doc.standard_rate,
+                        price: labelData.price,
                         copies: qty
                     });
                 },
