@@ -15,6 +15,7 @@ fixtures = [
         }
     },
     {"doctype": "Custom Field", "filters": {"module": "POS Arabia"}},
+    {"doctype": "Role", "filters": {"name": ["in", ["Submitted Document Editor"]]}},
 ]
 # required_apps = []
 
@@ -54,6 +55,11 @@ fixtures = [
 doctype_js = {
     "Item": "public/js/item.js",
     "POS Simple": "pos_arabia/doctype/pos_simple/pos_simple.js",
+    # Edit submitted documents in place (see posar/edit_after_submit.py)
+    "Purchase Invoice": "public/js/edit_after_submit.js",
+    "Purchase Order": "public/js/edit_after_submit.js",
+    "Journal Entry": "public/js/edit_after_submit.js",
+    "Payment Entry": "public/js/edit_after_submit.js",
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -155,13 +161,22 @@ doctype_js = {
 # 		"on_trash": "method"
 # 	}
 # }
+_edit_after_submit_events = {
+    "before_update_after_submit": "posar.edit_after_submit.before_update_after_submit",
+    "on_update_after_submit": "posar.edit_after_submit.on_update_after_submit",
+}
+
 doc_events = {
     "Sales Invoice": {
         "before_validate": "posar.accounting.apply_vat_and_return_accounts",
     },
     "Purchase Invoice": {
         "before_validate": "posar.accounting.apply_vat_and_return_accounts",
+        **_edit_after_submit_events,
     },
+    "Purchase Order": _edit_after_submit_events,
+    "Journal Entry": _edit_after_submit_events,
+    "Payment Entry": _edit_after_submit_events,
 }
 # Scheduled Tasks
 # ---------------
